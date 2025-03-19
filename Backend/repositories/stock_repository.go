@@ -1,18 +1,17 @@
 package repositories
 
 import (
+	"Backend/config"
+	"Backend/models"
 	"encoding/json"
 	"fmt"
 	"log"
 	"os"
 	"strings"
 
-	"Backend/config"
-
-	"Backend/models"
-
 	"github.com/go-resty/resty/v2"
 	"gorm.io/gorm"
+	"gorm.io/gorm/clause"
 )
 
 var db *gorm.DB
@@ -30,32 +29,33 @@ func FetchAndStoreStockData() {
 		log.Fatalf(" Error fetching data from API: %v", err)
 	}
 
-	// Insert into DB only if the stock does not exist
+	// Convertir los datos de la API a una lista de modelos Stock
+	var stocks []models.Stock
 	for _, stock := range stockData.Items {
-		targetFrom := parsePrice(stock.TargetFrom)
-		targetTo := parsePrice(stock.TargetTo)
-
-		var existingStock models.Stock
-		result := db.Where("ticker = ? AND time = ?", stock.Ticker, stock.Time).First(&existingStock)
-
-		if result.RowsAffected == 0 {
-			db.Create(&models.Stock{
-				Ticker:     stock.Ticker,
-				Company:    stock.Company,
-				TargetFrom: targetFrom,
-				TargetTo:   targetTo,
-				Action:     stock.Action,
-				Brokerage:  stock.Brokerage,
-				RatingFrom: stock.RatingFrom,
-				RatingTo:   stock.RatingTo,
-				Time:       stock.Time,
-			})
-			fmt.Printf(" Inserted stock: %s (%s)\n", stock.Ticker, stock.Time)
-		} else {
-			fmt.Printf("🔄 Stock already exists: %s (%s), skipping insert\n", stock.Ticker, stock.Time)
-		}
+		stocks = append(stocks, models.Stock{
+			Ticker:     stock.Ticker,
+			Company:    stock.Company,
+			TargetFrom: parsePrice(stock.TargetFrom),
+			TargetTo:   parsePrice(stock.TargetTo),
+			Action:     stock.Action,
+			Brokerage:  stock.Brokerage,
+			RatingFrom: stock.RatingFrom,
+			RatingTo:   stock.RatingTo,
+			Time:       stock.Time,
+		})
 	}
-	fmt.Println("📊 Data storage process completed.")
+
+	// Realizar un UPSERT usando GORM
+	result := db.Clauses(clause.OnConflict{
+		Columns:   []clause.Column{{Name: "ticker"}, {Name: "time"}},                                                                 // Conflict keys
+		DoUpdates: clause.AssignmentColumns([]string{"target_from", "target_to", "action", "brokerage", "rating_from", "rating_to"}), // Campos a actualizar
+	}).Create(&stocks)
+
+	if result.Error != nil {
+		log.Fatalf(" Error inserting/updating stocks: %v", result.Error)
+	}
+
+	fmt.Printf("📊 Inserted/Updated %d stocks\n", result.RowsAffected)
 }
 
 func fetchStockData() (*models.StockResponse, error) {
