@@ -1,19 +1,18 @@
 package main
 
 import (
-	"Backend/config"
-	"Backend/handlers"
-	"Backend/repositories"
 	"log"
 
-	"github.com/gin-contrib/cors"
+	"Backend/config"
+	"Backend/handlers"
 
+	"github.com/gin-contrib/cors"
 	"github.com/gin-gonic/gin"
 	"github.com/joho/godotenv"
 )
 
 func main() {
-	// Cargar variables de entorno desde el archivo .env
+	// Cargar variables de entorno
 	if err := godotenv.Load(); err != nil {
 		log.Fatalf("Error loading .env file: %v", err)
 	}
@@ -24,24 +23,24 @@ func main() {
 		log.Fatalf("Error initializing database: %v", err)
 	}
 
-	// Pasar la instancia de db a los repositorios
-	repositories.SetDB(db)
-
-	// Fetch y almacenar datos de la API (obtener 5 páginas)
-	if err := repositories.FetchAndStoreStockData(1); err != nil {
-		log.Fatalf("Error fetching and storing stock data: %v", err)
-	}
-
 	// Configurar el enrutador
 	r := gin.Default()
-	r.Use(cors.Default())
+
+	// Configurar CORS
+	config := cors.DefaultConfig()
+	config.AllowAllOrigins = true
+	config.AllowMethods = []string{"GET", "POST", "PUT", "DELETE", "OPTIONS"}
+	config.AllowHeaders = []string{"Origin", "Content-Type", "Authorization"}
+	r.Use(cors.New(config))
 
 	// Configurar los manejadores
-	handlers.SetDB(db)
+	stockHandler := handlers.NewStockHandler(db)
 
-	r.GET("/stocks", handlers.GetStocks)
-	r.GET("/stocks/recommendations", handlers.GetBestStocks)
+	// Definir las rutas
+	r.GET("/stocks", stockHandler.GetStocks)
+	r.GET("/stocks/recommendations", stockHandler.GetBestStocks)
 
+	// Iniciar el servidor
 	log.Println("API running at http://localhost:9090")
 	if err := r.Run(":9090"); err != nil {
 		log.Fatalf("Error starting server: %v", err)

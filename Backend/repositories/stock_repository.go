@@ -1,29 +1,28 @@
 package repositories
 
 import (
-	"Backend/config"
-	"Backend/models"
 	"encoding/json"
 	"fmt"
+	"io"
+	"net/http"
 	"os"
 	"strings"
 
-	"github.com/go-resty/resty/v2"
+	"Backend/models"
+
 	"gorm.io/gorm"
 	"gorm.io/gorm/clause"
 )
 
 var db *gorm.DB
 
-func init() {
-	db = config.GetDB()
-}
+// SetDB asigna la instancia de la base de datos
 func SetDB(database *gorm.DB) {
 	db = database
 }
 
-func FetchAndStoreStockData(maxPages int) error {
-	stockData, err := fetchStockData(maxPages)
+func FetchAndStoreStockData() error {
+	stockData, err := fetchStockData()
 	if err != nil {
 		return fmt.Errorf("error fetching data from API: %v", err)
 	}
@@ -58,55 +57,53 @@ func FetchAndStoreStockData(maxPages int) error {
 	return nil
 }
 
-func fetchStockData(maxPages int) (*models.StockResponse, error) {
-	apiBaseURL := os.Getenv("API_URL") // URL base de la API
+func fetchStockData() (*models.StockResponse, error) {
+	apiURL := os.Getenv("API_URL")
 	apiKey := os.Getenv("API_KEY")
 
-	client := resty.New()
-	var allItems []models.StockData
-	nextPage := ""
-
-	for page := 1; page <= maxPages; page++ {
-		url := apiBaseURL
-		if nextPage != "" {
-			// Construir la URL completa usando el identificador de la siguiente página
-			url = fmt.Sprintf("%s/%s", apiBaseURL, nextPage)
-		}
-
-		resp, err := client.R().
-			SetHeader("Authorization", "Bearer "+apiKey).
-			SetHeader("Content-Type", "application/json").
-			Get(url)
-
-		if err != nil {
-			return nil, fmt.Errorf("error fetching data from API (page %d): %v", page, err)
-		}
-
-		if resp.IsError() {
-			return nil, fmt.Errorf("API error (page %d): %s", page, resp.Status())
-		}
-
-		// Parse API response
-		var stockData models.StockResponse
-		if err := json.Unmarshal(resp.Body(), &stockData); err != nil {
-			return nil, fmt.Errorf("error parsing API response (page %d): %v", page, err)
-		}
-
-		// Agregar los ítems de esta página a la lista completa
-		allItems = append(allItems, stockData.Items...)
-
-		// Verificar si hay más páginas
-		nextPage = stockData.NextPage
-		if nextPage == "" {
-			break // No hay más páginas
-		}
+	// Crear una nueva solicitud HTTP
+	req, err := http.NewRequest("GET", apiURL, nil)
+	if err != nil {
+		return nil, fmt.Errorf("error creating HTTP request: %v", err)
 	}
 
-	// Devolver todos los ítems concatenados
-	return &models.StockResponse{
-		Items:    allItems,
-		NextPage: "", // No es necesario devolver nextPage aquí
-	}, nil
+	// Agregar headers
+	req.Header.Set("Authorization", "Bearer "+apiKey)
+	req.Header.Set("Content-Type", "application/json")
+
+	// Realizar la solicitud HTTP
+	client := &http.Client{}
+	resp, err := client.Do(req)
+	if err != nil {
+		return nil, fmt.Errorf("error making HTTP request: %v", err)
+	}
+	defer resp.Body.Close()
+
+	// Leer la respuesta
+	body, err := io.ReadAll(resp.Body)
+	if err != nil {
+		return nil, fmt.Errorf("error reading response body: %v", err)
+	}
+
+	// Verificar el código de estado
+	if resp.StatusCode != http.StatusOK {
+		return nil, fmt.Errorf("API error: %s", resp.Status)
+	}
+
+	// Parsear la respuesta JSON
+	var stockData models.StockResponse
+	if err := json.Unmarshal(body, &stockData); err != nil {
+		return nil, fmt.Errorf("error parsing API response: %v", err)
+	}
+
+	return &stockData, nil
+}
+
+func parsePrice(price string) float64 {
+	var value float64
+	price = strings.Replace(price, "$", "", -1)
+	fmt.Sscanf(price, "%f", &value)
+	return value
 }
 
 func GetStocks(db *gorm.DB, ticker, company, brokerage string) ([]models.Stock, error) {
@@ -133,6 +130,7 @@ func GetStocks(db *gorm.DB, ticker, company, brokerage string) ([]models.Stock, 
 	return stocks, nil
 }
 
+// GetAllStocks obtiene todas las acciones de la base de datos
 func GetAllStocks(db *gorm.DB) ([]models.Stock, error) {
 	var stocks []models.Stock
 	result := db.Find(&stocks)
@@ -142,11 +140,4 @@ func GetAllStocks(db *gorm.DB) ([]models.Stock, error) {
 	}
 
 	return stocks, nil
-}
-
-func parsePrice(price string) float64 {
-	var value float64
-	price = strings.Replace(price, "$", "", -1)
-	fmt.Sscanf(price, "%f", &value)
-	return value
 }

@@ -6,46 +6,70 @@ import (
 	"Backend/models"
 )
 
-func CalculateStockScore(stock models.Stock) float64 {
-	score := 0.0
+type Rating string
 
-	// Target price increase impact
-	priceIncrease := stock.TargetTo - stock.TargetFrom
-	if priceIncrease > 0 {
-		score += 3
-		if priceIncrease > 10 {
-			score += 2
-		}
-	}
+const (
+	Sell    Rating = "Sell"
+	Buy     Rating = "Buy"
+	Neutral Rating = "Neutral"
+)
 
-	// Rating changes impact
-	if stock.RatingFrom == "Sell" && stock.RatingTo == "Buy" {
-		score += 3
-	} else if stock.RatingFrom == "Neutral" && stock.RatingTo == "Buy" {
-		score += 2
-	} else if stock.RatingFrom == "Sell" && stock.RatingTo == "Neutral" {
-		score += 1
-	}
+const (
+	PriceIncreaseScore      = 3
+	LargePriceIncreaseBonus = 2
+	SellToBuyScore          = 3
+	NeutralToBuyScore       = 2
+	SellToNeutralScore      = 1
+)
 
-	// Weight based on brokerage reputation
-	topBrokers := map[string]float64{
-		"The Goldman Sachs Group": 2,
-		"JPMorgan Chase":          1.5,
-		"Bank of America":         1,
-	}
-
-	if value, exists := topBrokers[stock.Brokerage]; exists {
-		score += value
-	}
-
-	return score
+type BrokerScorer interface {
+	GetScore(brokerage string) float64
 }
 
-func CalculateStockRecommendations(stocks []models.Stock) []models.StockRecommendation {
+// DefaultBrokerScorer implementa BrokerScorer usando un mapa de brokers.
+type DefaultBrokerScorer struct {
+	TopBrokers map[string]float64
+}
+
+// GetScore devuelve el score de un broker.
+func (s *DefaultBrokerScorer) GetScore(brokerage string) float64 {
+	if value, exists := s.TopBrokers[brokerage]; exists {
+		return value
+	}
+	return 0
+}
+
+func calculatePriceImpact(stock models.Stock) float64 {
+	priceIncrease := stock.TargetTo - stock.TargetFrom
+	if priceIncrease > 0 {
+		if priceIncrease > 10 {
+			return PriceIncreaseScore + LargePriceIncreaseBonus
+		}
+		return PriceIncreaseScore
+	}
+	return 0
+}
+
+func calculateRatingImpact(stock models.Stock) float64 {
+	if stock.RatingFrom == string(Sell) && stock.RatingTo == string(Buy) {
+		return SellToBuyScore
+	} else if stock.RatingFrom == string(Neutral) && stock.RatingTo == string(Buy) {
+		return NeutralToBuyScore
+	} else if stock.RatingFrom == string(Sell) && stock.RatingTo == string(Neutral) {
+		return SellToNeutralScore
+	}
+	return 0
+}
+
+func CalculateStockScore(stock models.Stock, scorer BrokerScorer) float64 {
+	return calculatePriceImpact(stock) + calculateRatingImpact(stock) + scorer.GetScore(stock.Brokerage)
+}
+
+func CalculateStockRecommendations(stocks []models.Stock, scorer BrokerScorer) []models.StockRecommendation {
 	recommendations := make([]models.StockRecommendation, 0)
 
 	for _, stock := range stocks {
-		score := CalculateStockScore(stock)
+		score := CalculateStockScore(stock, scorer)
 		recommendation := ""
 
 		if score >= 7 {
@@ -59,12 +83,14 @@ func CalculateStockRecommendations(stocks []models.Stock) []models.StockRecommen
 		}
 
 		recommendations = append(recommendations, models.StockRecommendation{
-			Stock: stock, Score: score, Recommendation: recommendation,
+			Stock:          stock,
+			Score:          score,
+			Recommendation: recommendation,
 		})
 	}
 
-	// Sort by highest score
-	sort.Slice(recommendations, func(i, j int) bool {
+	// Ordenar por score más alto
+	sort.SliceStable(recommendations, func(i, j int) bool {
 		return recommendations[i].Score > recommendations[j].Score
 	})
 
