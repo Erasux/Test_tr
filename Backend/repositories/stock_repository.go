@@ -5,7 +5,6 @@ import (
 	"Backend/models"
 	"encoding/json"
 	"fmt"
-	"log"
 	"os"
 	"strings"
 
@@ -23,10 +22,10 @@ func SetDB(database *gorm.DB) {
 	db = database
 }
 
-func FetchAndStoreStockData() {
-	stockData, err := fetchStockData()
+func FetchAndStoreStockData(maxPages int) error {
+	stockData, err := fetchStockData(maxPages)
 	if err != nil {
-		log.Fatalf(" Error fetching data from API: %v", err)
+		return fmt.Errorf("error fetching data from API: %v", err)
 	}
 
 	// Convertir los datos de la API a una lista de modelos Stock
@@ -52,38 +51,62 @@ func FetchAndStoreStockData() {
 	}).Create(&stocks)
 
 	if result.Error != nil {
-		log.Fatalf(" Error inserting/updating stocks: %v", result.Error)
+		return fmt.Errorf("error inserting/updating stocks: %v", result.Error)
 	}
 
 	fmt.Printf("📊 Inserted/Updated %d stocks\n", result.RowsAffected)
+	return nil
 }
 
-func fetchStockData() (*models.StockResponse, error) {
-	apiURL := os.Getenv("API_URL")
+func fetchStockData(maxPages int) (*models.StockResponse, error) {
+	apiBaseURL := os.Getenv("API_URL") // URL base de la API
 	apiKey := os.Getenv("API_KEY")
 
 	client := resty.New()
-	resp, err := client.R().
-		SetHeader("Authorization", "Bearer "+apiKey).
-		SetHeader("Content-Type", "application/json").
-		Get(apiURL)
+	var allItems []models.StockData
+	nextPage := ""
 
-	if err != nil {
-		return nil, err
+	for page := 1; page <= maxPages; page++ {
+		url := apiBaseURL
+		if nextPage != "" {
+			// Construir la URL completa usando el identificador de la siguiente página
+			url = fmt.Sprintf("%s/%s", apiBaseURL, nextPage)
+		}
+
+		resp, err := client.R().
+			SetHeader("Authorization", "Bearer "+apiKey).
+			SetHeader("Content-Type", "application/json").
+			Get(url)
+
+		if err != nil {
+			return nil, fmt.Errorf("error fetching data from API (page %d): %v", page, err)
+		}
+
+		if resp.IsError() {
+			return nil, fmt.Errorf("API error (page %d): %s", page, resp.Status())
+		}
+
+		// Parse API response
+		var stockData models.StockResponse
+		if err := json.Unmarshal(resp.Body(), &stockData); err != nil {
+			return nil, fmt.Errorf("error parsing API response (page %d): %v", page, err)
+		}
+
+		// Agregar los ítems de esta página a la lista completa
+		allItems = append(allItems, stockData.Items...)
+
+		// Verificar si hay más páginas
+		nextPage = stockData.NextPage
+		if nextPage == "" {
+			break // No hay más páginas
+		}
 	}
 
-	if resp.IsError() {
-		return nil, fmt.Errorf("API error: %s", resp.Status())
-	}
-
-	// Parse API response
-	var stockData models.StockResponse
-	err = json.Unmarshal(resp.Body(), &stockData)
-	if err != nil {
-		return nil, err
-	}
-
-	return &stockData, nil
+	// Devolver todos los ítems concatenados
+	return &models.StockResponse{
+		Items:    allItems,
+		NextPage: "", // No es necesario devolver nextPage aquí
+	}, nil
 }
 
 func GetStocks(db *gorm.DB, ticker, company, brokerage string) ([]models.Stock, error) {
