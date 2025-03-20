@@ -8,18 +8,26 @@ const searchCompany = ref("");
 const searchBrokerage = ref("");
 
 // Load stocks when the component mounts
-onMounted(() => {
-  store.fetchStocks();
+onMounted(async () => {
+  try {
+    await store.fetchStocks();
+  } catch (error) {
+    console.error("Error loading stocks:", error);
+  }
 });
 
 // Apply filters
-const applyFilters = () => {
+const applyFilters = async () => {
   const filters: Record<string, string> = {};
   if (searchTicker.value) filters["ticker"] = searchTicker.value;
   if (searchCompany.value) filters["company"] = searchCompany.value;
   if (searchBrokerage.value) filters["brokerage"] = searchBrokerage.value;
-  
-  store.fetchStocks(filters);
+
+  try {
+    await store.fetchStocks(filters);
+  } catch (error) {
+    console.error("Error applying filters:", error);
+  }
 };
 </script>
 
@@ -27,6 +35,7 @@ const applyFilters = () => {
   <div class="container mt-4">
     <h1 class="text-center">📊 Stock Tracker</h1>
 
+    <!-- Filters -->
     <div class="row my-4">
       <div class="col-md-3">
         <input v-model="searchTicker" placeholder="Search by Ticker" class="form-control" />
@@ -42,9 +51,20 @@ const applyFilters = () => {
       </div>
     </div>
 
+    <!-- Loading State -->
     <div v-if="store.loading" class="text-center">Loading data...</div>
-    <div v-else-if="store.error" class="text-center text-danger">{{ store.error }}</div>
-    
+
+    <!-- Error State -->
+    <div v-else-if="store.error" class="text-center text-danger">
+      {{ store.error }}
+    </div>
+
+    <!-- Empty State -->
+    <div v-else-if="store.stocks.length === 0" class="text-center">
+      No stocks found.
+    </div>
+
+    <!-- Data Table -->
     <table v-else class="table table-bordered">
       <thead class="table-light">
         <tr>

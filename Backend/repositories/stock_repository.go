@@ -130,7 +130,7 @@ func GetStocks(db *gorm.DB, ticker, company, brokerage string) ([]models.Stock, 
 	return stocks, nil
 }
 
-// GetAllStocks obtiene todas las acciones de la base de datos
+// GetAllStocks obtiene todas las acciones de la base de datos.
 func GetAllStocks(db *gorm.DB) ([]models.Stock, error) {
 	var stocks []models.Stock
 	result := db.Find(&stocks)
