@@ -141,3 +141,23 @@ func GetAllStocks(db *gorm.DB) ([]models.Stock, error) {
 
 	return stocks, nil
 }
+
+// MockStockRepository es una implementación mock de StockRepository.
+type MockStockRepository struct {
+	GetStocksFunc    func(db *gorm.DB, ticker, company, brokerage string) ([]models.Stock, error)
+	GetAllStocksFunc func(db *gorm.DB) ([]models.Stock, error)
+}
+
+func (m *MockStockRepository) GetStocks(db *gorm.DB, ticker, company, brokerage string) ([]models.Stock, error) {
+	if m.GetStocksFunc != nil {
+		return m.GetStocksFunc(db, ticker, company, brokerage)
+	}
+	return nil, nil
+}
+
+func (m *MockStockRepository) GetAllStocks(db *gorm.DB) ([]models.Stock, error) {
+	if m.GetAllStocksFunc != nil {
+		return m.GetAllStocksFunc(db)
+	}
+	return nil, nil
+}
