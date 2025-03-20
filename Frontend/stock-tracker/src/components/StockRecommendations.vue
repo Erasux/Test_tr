@@ -39,6 +39,9 @@ onMounted(fetchRecommendations);
 
     <div v-if="loading" class="text-center">Loading recommendations...</div>
     <div v-else-if="error" class="text-danger">{{ error }}</div>
+    <div v-else-if="recommendations.length === 0" class="text-center">
+      No recommendations available.
+    </div>
 
     <table v-else class="table table-striped">
       <thead>
@@ -53,13 +56,13 @@ onMounted(fetchRecommendations);
         </tr>
       </thead>
       <tbody>
-        <tr v-for="rec in recommendations" :key="rec.stock.ticker">
-          <td>{{ rec.stock.company }}</td>
-          <td>{{ rec.stock.ticker }}</td>
-          <td>${{ rec.stock.target_from }} → ${{ rec.stock.target_to }}</td>
-          <td>{{ rec.stock.brokerage }}</td>
-          <td>{{ rec.stock.rating_from }} → {{ rec.stock.rating_to }}</td>
-          <td>{{ rec.score.toFixed(1) }}</td>
+        <tr v-for="rec in recommendations" :key="rec.stock?.ticker || 'unknown'">
+          <td>{{ rec.stock?.company }}</td>
+          <td>{{ rec.stock?.ticker }}</td>
+          <td>${{ rec.stock?.target_from }} → ${{ rec.stock?.target_to }}</td>
+          <td>{{ rec.stock?.brokerage }}</td>
+          <td>{{ rec.stock?.rating_from }} → {{ rec.stock?.rating_to }}</td>
+          <td>{{ rec.score?.toFixed(1) }}</td>
           <td>{{ rec.recommendation }}</td>
         </tr>
       </tbody>
