@@ -24,12 +24,20 @@
                     <td class="px-6 py-3">{{ stock.company }}</td>
                     <td class="px-6 py-3">{{ stock.brokerage }}</td>
                     <td class="px-6 py-3">{{ stock.action }}</td>
-                    <td class="px-6 py-3">{{ stock.ratingFrom }}</td>
-                    <td class="px-6 py-3">{{ stock.ratingTo }}</td>
-                    <td class="px-6 py-3">${{ stock.targetFrom?.toFixed(2) || "N/A" }}</td>
-                    <td class="px-6 py-3">${{ stock.targetTo?.toFixed(2) || "N/A" }}</td>
-                    <td class="px-6 py-3 font-bold text-blue-600">{{ stock.score }}</td>
-                    <td class="px-6 py-3 font-bold" :class="getRecommendationClass(stock.recommendation)">
+                    <td class="px-6 py-3">{{ stock.rating_from || "-" }}</td>
+                    <td class="px-6 py-3">{{ stock.rating_to || "-" }}</td>
+                    <td class="px-6 py-3">${{ stock.target_from ? stock.target_from.toFixed(2) : "-" }}</td>
+                    <td class="px-6 py-3">${{ stock.target_to ? stock.target_to.toFixed(2) : "-" }}</td>
+
+                    <td class="px-6 py-3 text-blue-600 font-bold">
+                        {{ isNaN(Number(stock.score)) ? "-" : Number(stock.score).toFixed(2) }}
+                    </td>
+
+                    <td class="px-6 py-3 font-bold" :class="{
+                        'text-green-600': stock.recommendation === 'Strong Buy' || stock.recommendation === 'Buy',
+                        'text-gray-500': stock.recommendation === 'Hold',
+                        'text-red-600': stock.recommendation === 'Sell'
+                    }">
                         {{ stock.recommendation }}
                     </td>
                 </tr>
@@ -52,10 +60,5 @@ onMounted(() => {
     store.loadRecommendations();
 });
 
-const getRecommendationClass = (recommendation: string) => ({
-    "text-green-600": recommendation === "Strong Buy",
-    "text-yellow-500": recommendation === "Buy",
-    "text-gray-500": recommendation === "Hold",
-    "text-red-600": recommendation === "Sell",
-});
+
 </script>
