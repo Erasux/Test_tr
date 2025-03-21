@@ -36,8 +36,7 @@ func InitSecurityConfig() (*SecurityConfig, error) {
 		JWTSecret:     jwtSecret,
 		TokenDuration: 24 * time.Hour,
 		AllowedOrigins: []string{
-			"http://localhost:3000", // Frontend local
-			"https://tudominio.com", // Tu dominio de producción
+			"http://localhost:5173", // Frontend local
 		},
 	}
 
