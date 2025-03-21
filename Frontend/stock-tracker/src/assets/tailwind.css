@@ -1,3 +1,4 @@
+@import "tailwindcss";
 /*! tailwindcss v4.0.14 | MIT License | https://tailwindcss.com */
 @layer theme, base, components, utilities;
 @layer theme {
