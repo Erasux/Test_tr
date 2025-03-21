@@ -1,6 +1,9 @@
 <template>
     <div class="overflow-x-auto bg-white shadow-md rounded-lg p-4">
-        <table class="min-w-full border border-gray-300 rounded-lg">
+        <Loader v-if="loading" />
+        <p v-if="errorMessage" class="text-red-600 text-center font-bold">{{ errorMessage }}</p>
+
+        <table v-if="!loading && !errorMessage" class="min-w-full border border-gray-300 rounded-lg">
             <thead class="bg-gray-200 text-gray-700 uppercase text-sm">
                 <tr>
                     <th class="px-6 py-3 text-left">Ticker</th>
@@ -21,10 +24,10 @@
                     <td class="px-6 py-3">{{ stock.company }}</td>
                     <td class="px-6 py-3">{{ stock.brokerage }}</td>
                     <td class="px-6 py-3">{{ stock.action }}</td>
-                    <td class="px-6 py-3">{{ stock.rating_from }}</td>
-                    <td class="px-6 py-3">{{ stock.rating_to }}</td>
-                    <td class="px-6 py-3">${{ stock.target_from.toFixed(2) }}</td>
-                    <td class="px-6 py-3">${{ stock.target_to.toFixed(2) }}</td>
+                    <td class="px-6 py-3">{{ stock.ratingFrom }}</td>
+                    <td class="px-6 py-3">{{ stock.ratingTo }}</td>
+                    <td class="px-6 py-3">${{ stock.targetFrom?.toFixed(2) || "N/A" }}</td>
+                    <td class="px-6 py-3">${{ stock.targetTo?.toFixed(2) || "N/A" }}</td>
                     <td class="px-6 py-3 font-bold text-blue-600">{{ stock.score }}</td>
                     <td class="px-6 py-3 font-bold" :class="getRecommendationClass(stock.recommendation)">
                         {{ stock.recommendation }}
@@ -37,21 +40,22 @@
 
 <script setup lang="ts">
 import { computed, onMounted } from "vue";
-import { useStockRecommendationStore } from "../../stores/stockRecommendationStore";
+import { useStockRecommendationStore } from "@/stores/stockRecommendationStore";
+import Loader from "@/components/Loader.vue";
 
 const store = useStockRecommendationStore();
 const recommendations = computed(() => store.recommendations);
+const loading = computed(() => store.loading);
+const errorMessage = computed(() => store.errorMessage);
 
 onMounted(() => {
     store.loadRecommendations();
 });
 
-const getRecommendationClass = (recommendation: string) => {
-    return {
-        "text-green-600": recommendation === "Strong Buy",
-        "text-yellow-500": recommendation === "Buy",
-        "text-gray-500": recommendation === "Hold",
-        "text-red-600": recommendation === "Sell",
-    };
-};
+const getRecommendationClass = (recommendation: string) => ({
+    "text-green-600": recommendation === "Strong Buy",
+    "text-yellow-500": recommendation === "Buy",
+    "text-gray-500": recommendation === "Hold",
+    "text-red-600": recommendation === "Sell",
+});
 </script>

@@ -1,6 +1,10 @@
 <template>
     <div class="overflow-x-auto bg-white shadow-md rounded-lg p-4">
-        <table class="min-w-full border border-gray-300 rounded-lg">
+        <Loader v-if="loading" />
+        <p v-if="errorMessage" class="text-red-600 text-center font-bold">{{ errorMessage }}</p>
+
+        <table v-if="!loading && !errorMessage && stocks.length > 0"
+            class="min-w-full border border-gray-300 rounded-lg">
             <thead class="bg-gray-200 text-gray-700 uppercase text-sm">
                 <tr>
                     <th class="px-6 py-3 text-left">Ticker</th>
@@ -19,16 +23,31 @@
                     <td class="px-6 py-3">{{ stock.company }}</td>
                     <td class="px-6 py-3">{{ stock.brokerage }}</td>
                     <td class="px-6 py-3">{{ stock.action }}</td>
-                    <td class="px-6 py-3">{{ stock.ratingFrom || "N/A" }}</td>
-                    <td class="px-6 py-3">{{ stock.ratingTo || "N/A" }}</td>
-                    <td class="px-6 py-3">${{ isNaN(stock.targetFrom) ? "N/A" : stock.targetFrom.toFixed(2) }}</td>
-                    <td class="px-6 py-3">${{ isNaN(stock.targetTo) ? "N/A" : stock.targetTo.toFixed(2) }}</td>
+                    <td class="px-6 py-3">{{ stock.rating_from || "N/A" }}</td>
+                    <td class="px-6 py-3">{{ stock.rating_to || "N/A" }}</td>
+                    <td class="px-6 py-3">${{ stock.target_from ? stock.target_from.toFixed(2) : "N/A" }}</td>
+                    <td class="px-6 py-3">${{ stock.target_to ? stock.target_to.toFixed(2) : "N/A" }}</td>
                 </tr>
             </tbody>
         </table>
+
+        <p v-if="!loading && !errorMessage && stocks.length === 0" class="text-center text-gray-500">
+            No stocks available.
+        </p>
     </div>
 </template>
 
 <script setup lang="ts">
-defineProps<{ stocks: any[] }>();
+import { computed, onMounted } from "vue";
+import { useStockStore } from "@/stores/stockStore";
+import Loader from "@/components/Loader.vue";
+
+const stockStore = useStockStore();
+const stocks = computed(() => stockStore.filteredStocks);
+const loading = computed(() => stockStore.loading);
+const errorMessage = computed(() => stockStore.errorMessage);
+
+onMounted(() => {
+    stockStore.loadStocks(); // No duplica la petición si los datos ya están cargados
+});
 </script>
