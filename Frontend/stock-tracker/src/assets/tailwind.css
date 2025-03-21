@@ -3,7 +3,6 @@
 @layer theme {
   :root, :host {
     --color-red-600: oklch(0.577 0.245 27.325);
-    --color-yellow-500: oklch(0.795 0.184 86.047);
     --color-green-600: oklch(0.627 0.194 149.214);
     --color-blue-300: oklch(0.809 0.105 251.813);
     --color-blue-500: oklch(0.623 0.214 259.815);
@@ -363,9 +362,6 @@
   }
   .text-white {
     color: var(--color-white);
-  }
-  .text-yellow-500 {
-    color: var(--color-yellow-500);
   }
   .uppercase {
     text-transform: uppercase;
