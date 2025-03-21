@@ -8,6 +8,7 @@ import (
 	"os"
 	"strings"
 
+	"Backend/config"
 	"Backend/models"
 
 	"gorm.io/gorm"
@@ -71,8 +72,8 @@ func fetchStockData() (*models.StockResponse, error) {
 	req.Header.Set("Authorization", "Bearer "+apiKey)
 	req.Header.Set("Content-Type", "application/json")
 
-	// Realizar la solicitud HTTP
-	client := &http.Client{}
+	// Usar el cliente HTTP compartido
+	client := config.GetHTTPClient()
 	resp, err := client.Do(req)
 	if err != nil {
 		return nil, fmt.Errorf("error making HTTP request: %v", err)
