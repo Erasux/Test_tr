@@ -4,6 +4,7 @@ import (
 	"Backend/models"
 	"fmt"
 
+	"github.com/joho/godotenv"
 	"gorm.io/driver/postgres"
 	"gorm.io/gorm"
 )
@@ -11,7 +12,17 @@ import (
 var db *gorm.DB
 
 func InitDB() (*gorm.DB, error) {
-	dsn := "postgresql://root@localhost:26257/stocks_db?sslmode=disable"
+	// Load environment variables
+	err := godotenv.Load()
+	if err != nil {
+		return nil, fmt.Errorf("error loading .env file: %v", err)
+	}
+	envMap, err := godotenv.Read()
+	if err != nil {
+		return nil, fmt.Errorf("error reading environment variables: %v", err)
+	}
+	dsn := envMap["DB_URL"]
+
 	db, err := gorm.Open(postgres.Open(dsn), &gorm.Config{})
 	if err != nil {
 		return nil, fmt.Errorf("error connecting to CockroachDB: %v", err)
