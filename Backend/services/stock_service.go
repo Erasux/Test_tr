@@ -2,6 +2,7 @@ package services
 
 import (
 	"sort"
+	"strings"
 
 	"Backend/models"
 )
@@ -37,6 +38,13 @@ func (s *DefaultBrokerScorer) GetScore(brokerage string) float64 {
 		return value
 	}
 	return 0
+}
+
+// NewDefaultBrokerScorer crea una nueva instancia de DefaultBrokerScorer
+func NewDefaultBrokerScorer(topBrokers map[string]float64) *DefaultBrokerScorer {
+	return &DefaultBrokerScorer{
+		TopBrokers: topBrokers,
+	}
 }
 
 func calculatePriceImpact(stock models.Stock) float64 {
@@ -95,4 +103,20 @@ func CalculateStockRecommendations(stocks []models.Stock, scorer BrokerScorer) [
 	})
 
 	return recommendations
+}
+
+// SanitizeInput limpia y sanitiza el input del usuario
+func SanitizeInput(input string) string {
+	// Eliminar espacios en blanco al inicio y final
+	input = strings.TrimSpace(input)
+	// Convertir a minúsculas para normalizar
+	input = strings.ToLower(input)
+	// Eliminar caracteres especiales peligrosos
+	input = strings.Map(func(r rune) rune {
+		if r >= 'a' && r <= 'z' || r >= '0' && r <= '9' || r == ' ' || r == '-' || r == '.' {
+			return r
+		}
+		return -1
+	}, input)
+	return input
 }
