@@ -54,8 +54,8 @@ func SecurityMiddleware() gin.HandlerFunc {
 	}
 }
 
-// isRateLimited implementa un rate limiting básico
+// isRateLimited implementa un rate limiting básico para pruebas locales
 func isRateLimited(ip string) bool {
-	// TODO: Implementar rate limiting con Redis
-	return false
+
+	return false // Deshabilitado para pruebas
 }
