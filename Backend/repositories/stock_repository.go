@@ -6,9 +6,10 @@ import (
 	"io"
 	"net/http"
 	"os"
-	"strings"
 
+	"Backend/config"
 	"Backend/models"
+	"Backend/utils"
 
 	"gorm.io/gorm"
 	"gorm.io/gorm/clause"
@@ -29,18 +30,20 @@ func FetchAndStoreStockData() error {
 
 	// Convertir los datos de la API a una lista de modelos Stock
 	var stocks []models.Stock
-	for _, stock := range stockData.Items {
-		stocks = append(stocks, models.Stock{
-			Ticker:     stock.Ticker,
-			Company:    stock.Company,
-			TargetFrom: parsePrice(stock.TargetFrom),
-			TargetTo:   parsePrice(stock.TargetTo),
-			Action:     stock.Action,
-			Brokerage:  stock.Brokerage,
-			RatingFrom: stock.RatingFrom,
-			RatingTo:   stock.RatingTo,
-			Time:       stock.Time,
-		})
+	for _, item := range stockData.Items {
+		// Convertir el map[string]interface{} a los tipos correctos
+		stock := models.Stock{
+			Ticker:     item["ticker"].(string),
+			Company:    item["company"].(string),
+			TargetFrom: utils.ParsePrice(item["target_from"].(string)),
+			TargetTo:   utils.ParsePrice(item["target_to"].(string)),
+			Action:     item["action"].(string),
+			Brokerage:  item["brokerage"].(string),
+			RatingFrom: item["rating_from"].(string),
+			RatingTo:   item["rating_to"].(string),
+			Time:       item["time"].(string),
+		}
+		stocks = append(stocks, stock)
 	}
 
 	// Realizar un UPSERT usando GORM
@@ -71,8 +74,8 @@ func fetchStockData() (*models.StockResponse, error) {
 	req.Header.Set("Authorization", "Bearer "+apiKey)
 	req.Header.Set("Content-Type", "application/json")
 
-	// Realizar la solicitud HTTP
-	client := &http.Client{}
+	// Usar el cliente HTTP compartido
+	client := config.GetHTTPClient()
 	resp, err := client.Do(req)
 	if err != nil {
 		return nil, fmt.Errorf("error making HTTP request: %v", err)
@@ -97,13 +100,6 @@ func fetchStockData() (*models.StockResponse, error) {
 	}
 
 	return &stockData, nil
-}
-
-func parsePrice(price string) float64 {
-	var value float64
-	price = strings.Replace(price, "$", "", -1)
-	fmt.Sscanf(price, "%f", &value)
-	return value
 }
 
 func GetStocks(db *gorm.DB, ticker, company, brokerage string) ([]models.Stock, error) {
@@ -140,24 +136,4 @@ func GetAllStocks(db *gorm.DB) ([]models.Stock, error) {
 	}
 
 	return stocks, nil
-}
-
-// MockStockRepository es una implementación mock de StockRepository.
-type MockStockRepository struct {
-	GetStocksFunc    func(db *gorm.DB, ticker, company, brokerage string) ([]models.Stock, error)
-	GetAllStocksFunc func(db *gorm.DB) ([]models.Stock, error)
-}
-
-func (m *MockStockRepository) GetStocks(db *gorm.DB, ticker, company, brokerage string) ([]models.Stock, error) {
-	if m.GetStocksFunc != nil {
-		return m.GetStocksFunc(db, ticker, company, brokerage)
-	}
-	return nil, nil
-}
-
-func (m *MockStockRepository) GetAllStocks(db *gorm.DB) ([]models.Stock, error) {
-	if m.GetAllStocksFunc != nil {
-		return m.GetAllStocksFunc(db)
-	}
-	return nil, nil
 }

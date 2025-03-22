@@ -5,6 +5,7 @@ import (
 
 	"Backend/config"
 	"Backend/handlers"
+	"Backend/middleware"
 
 	"github.com/gin-contrib/cors"
 	"github.com/gin-gonic/gin"
@@ -17,6 +18,15 @@ func main() {
 		log.Fatalf("Error loading .env file: %v", err)
 	}
 
+	// Inicializar logger
+	config.InitLogger()
+
+	// Inicializar configuración de seguridad
+	securityConfig, err := config.InitSecurityConfig()
+	if err != nil {
+		log.Fatalf("Error initializing security config: %v", err)
+	}
+
 	// Inicializar la base de datos
 	db, err := config.InitDB()
 	if err != nil {
@@ -26,22 +36,29 @@ func main() {
 	// Configurar el enrutador
 	r := gin.Default()
 
-	// Configurar CORS
-	config := cors.DefaultConfig()
-	config.AllowAllOrigins = true
-	config.AllowMethods = []string{"GET", "POST", "PUT", "DELETE", "OPTIONS"}
-	config.AllowHeaders = []string{"Origin", "Content-Type", "Authorization"}
-	r.Use(cors.New(config))
+	// Aplicar middleware de seguridad
+	r.Use(middleware.SecurityMiddleware())
+
+	// Configurar CORS de forma segura
+	corsConfig := cors.DefaultConfig()
+	corsConfig.AllowOrigins = securityConfig.AllowedOrigins
+	corsConfig.AllowMethods = []string{"GET", "POST", "PUT", "DELETE", "OPTIONS"}
+	corsConfig.AllowHeaders = []string{"Origin", "Content-Type", "Authorization"}
+	corsConfig.AllowCredentials = true
+	r.Use(cors.New(corsConfig))
 
 	// Configurar los manejadores
-	stockHandler := handlers.NewStockHandler(db)
+	stockHandler, err := handlers.NewStockHandler(db)
+	if err != nil {
+		log.Fatalf("Error creating stock handler: %v", err)
+	}
 
 	// Definir las rutas
 	r.GET("/stocks", stockHandler.GetStocks)
 	r.GET("/stocks/recommendations", stockHandler.GetBestStocks)
 
 	// Iniciar el servidor
-	log.Println("API running at http://localhost:9090")
+	config.LogInfo("API running at http://localhost:9090", "main")
 	if err := r.Run(":9090"); err != nil {
 		log.Fatalf("Error starting server: %v", err)
 	}
