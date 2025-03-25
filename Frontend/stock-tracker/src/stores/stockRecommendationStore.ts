@@ -1,8 +1,9 @@
 import { defineStore } from "pinia";
 import { ref } from "vue";
+import type { StockRecommendation, StockRecommendationResponse } from "@/types/StockRecommendation";
 
 export const useStockRecommendationStore = defineStore("stockRecommendation", () => {
-  const recommendations = ref<any[]>([]);
+  const recommendations = ref<StockRecommendation[]>([]);
   const errorMessage = ref<string | null>(null);
   const loading = ref(true);
 
@@ -17,9 +18,9 @@ export const useStockRecommendationStore = defineStore("stockRecommendation", ()
         throw new Error(`HTTP error! Status: ${response.status}`);
       }
 
-      const data = await response.json();
+      const data = await response.json() as StockRecommendationResponse;
 
-      recommendations.value = data.data.map((item: any) => ({
+      recommendations.value = data.data.map((item) => ({
         ...item.stock,
         score: item.score.toFixed(2),
         recommendation: item.recommendation

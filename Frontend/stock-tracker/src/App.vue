@@ -1,10 +1,10 @@
 <template>
   <div>
-    <Navbar />
+    <NavigationBar />
     <router-view></router-view>
   </div>
 </template>
 
 <script setup lang="ts">
-import Navbar from "@/components/Navbar.vue";
+import NavigationBar from "@/components/Navbar.vue";
 </script>
