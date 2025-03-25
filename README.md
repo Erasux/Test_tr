@@ -4,11 +4,11 @@ Una aplicación web moderna para el seguimiento y análisis de acciones bursáti
 
 ## Características
 
-- Seguimiento en tiempo real de acciones bursátiles
-- Recomendaciones de mejores acciones
-- Interfaz de usuario moderna y responsive
-- API RESTful segura
-- Manejo de CORS y seguridad implementada
+- Seguimiento en tiempo real de acciones bursátiles mediante API.
+- Recomendaciones de mejores acciones con un algoritmo de puntajes.
+- Interfaz de usuario moderna y responsive.
+- API RESTful segura.
+- Manejo de CORS y seguridad implementada.
 
 ## Tecnologías Utilizadas
 
@@ -24,6 +24,9 @@ Una aplicación web moderna para el seguimiento y análisis de acciones bursáti
 - Tailwind CSS
 - Pinia (Estado)
 - Vue Router
+
+### Database
+-CockroachDB
 
 ## Prerrequisitos
 
@@ -111,5 +114,5 @@ El proyecto incluye:
 - `npm run lint` - Ejecuta el linter
 - `npm run format` - Formatea el código
 
-###Creador
+### Creador
 Samir Esteban Gonzalez 
