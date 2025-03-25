@@ -1,0 +1,33 @@
+version: '3.8'
+
+services:
+  backend:
+    build:
+      context: ./Backend
+      dockerfile: Dockerfile
+    ports:
+      - "9090:9090"
+    environment:
+      - DB_URL= ${DB_URL}
+      - API_URL= ${API_URL}
+      - API_KEY= ${API_KEY}
+      - JWT_SECRET= ${JWT_SECRET}
+    networks:
+      - app-network
+
+  frontend:
+    build:
+      context: ./Frontend/stock-tracker
+      dockerfile: Dockerfile
+    ports:
+      - "5173:5173"
+    depends_on:
+      - backend
+    environment:
+      - VITE_API_URL=${API_URL}
+    networks:
+      - app-network
+
+networks:
+  app-network:
+    driver: bridge 

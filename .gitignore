@@ -24,6 +24,8 @@ dist-ssr
 # Frontend VSCode specific
 Frontend/stock-tracker/.vscode/*
 !Frontend/stock-tracker/.vscode/extensions.json
+Frontend/stock-tracker/node_modules
+Frontend/stock-tracker/.env
 
 # Backend .env
 Backend/.env
