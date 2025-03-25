@@ -9,4 +9,9 @@
       </div>
     </nav>
   </template>
-  
+
+<script lang="ts">
+export default {
+  name: 'NavigationBar'
+}
+</script>
