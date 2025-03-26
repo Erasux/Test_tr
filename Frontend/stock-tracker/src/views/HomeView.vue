@@ -12,11 +12,12 @@ import { computed, onMounted } from "vue";
 import { useStockStore } from "@/stores/stockStore";
 import StockFilters from "@/components/stocks/StockFilters.vue";
 import StockTable from "@/components/stocks/StockTable.vue";
+import type { StockFilters as Filters } from "@/types/stock";
 
 const stockStore = useStockStore();
 const filteredStocks = computed(() => stockStore.filteredStocks);
 
-const applyFilters = (filters: any) => {
+const applyFilters = (filters: Filters) => {
   stockStore.setFilters(filters);
 };
 

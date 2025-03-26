@@ -41,4 +41,5 @@ interface Props {
 defineProps<Props>()
 defineEmits<{
     (e: 'dismiss'): void
-}>()</script>
+}>()
+</script>

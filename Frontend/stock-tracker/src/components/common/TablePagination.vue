@@ -33,11 +33,15 @@
                 clip-rule="evenodd" />
             </svg>
           </button>
-          <button v-for="page in visiblePages" :key="page" @click="goToPage(page)" :class="[
-            page === currentPage
-              ? 'relative z-10 inline-flex items-center bg-gray-600 px-4 py-2 text-sm font-semibold text-white focus:z-20 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-gray-600'
-              : 'relative inline-flex items-center px-4 py-2 text-sm font-semibold text-gray-900 ring-1 ring-inset ring-gray-300 hover:bg-gray-50 focus:z-20 focus:outline-offset-0'
-          ]">
+          <button v-for="page in visiblePages" :key="page"
+                 @click="typeof page === 'number' ? goToPage(page) : null"
+                 :disabled="typeof page === 'string'"
+                 :class="[
+                  typeof page !== 'number' ? 'relative inline-flex items-center px-4 py-2 text-sm font-semibold text-gray-400 ring-1 ring-inset ring-gray-300 cursor-default' :
+                  page === currentPage
+                    ? 'relative z-10 inline-flex items-center bg-gray-600 px-4 py-2 text-sm font-semibold text-white focus:z-20 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-gray-600'
+                    : 'relative inline-flex items-center px-4 py-2 text-sm font-semibold text-gray-900 ring-1 ring-inset ring-gray-300 hover:bg-gray-50 focus:z-20 focus:outline-offset-0'
+                ]">
             {{ page }}
           </button>
           <button @click="nextPage" :disabled="currentPage >= totalPages"
@@ -78,11 +82,11 @@ const totalPages = computed(() => Math.ceil(props.totalItems / props.itemsPerPag
 const startItem = computed(() => ((props.currentPage - 1) * props.itemsPerPage) + 1)
 const endItem = computed(() => Math.min(props.currentPage * props.itemsPerPage, props.totalItems))
 
-const visiblePages = computed(() => {
+const visiblePages = computed<(number | string)[]>(() => {
   const delta = 2
-  const range = []
-  const rangeWithDots = []
-  let l
+  const range: number[] = []
+  const rangeWithDots: (number | string)[] = []
+  let l: number | undefined
 
   for (let i = 1; i <= Math.min(totalPages.value, 7); i++) {
     range.push(i)

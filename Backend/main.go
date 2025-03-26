@@ -6,6 +6,7 @@ import (
 	"Backend/config"
 	"Backend/handlers"
 	"Backend/middleware"
+	"Backend/repositories"
 
 	"github.com/gin-contrib/cors"
 	"github.com/gin-gonic/gin"
@@ -33,6 +34,18 @@ func main() {
 		log.Fatalf("Error initializing database: %v", err)
 	}
 
+	// Configurar el repositorio de stocks
+	repositories.SetDB(db)
+
+	// Actualizar datos de stocks al inicio
+	go func() {
+		if err := repositories.FetchAndStoreStockData(); err != nil {
+			log.Printf("Error fetching initial stock data: %v", err)
+		} else {
+			log.Println("✅ Datos de stocks actualizados exitosamente")
+		}
+	}()
+
 	// Configurar el enrutador
 	r := gin.Default()
 
@@ -56,6 +69,7 @@ func main() {
 	// Definir las rutas
 	r.GET("/stocks", stockHandler.GetStocks)
 	r.GET("/stocks/recommendations", stockHandler.GetBestStocks)
+	r.POST("/stocks/update", stockHandler.UpdateStocks)
 
 	// Iniciar el servidor
 	config.LogInfo("API running at http://localhost:9090", "main")

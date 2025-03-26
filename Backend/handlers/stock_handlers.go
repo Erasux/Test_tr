@@ -4,6 +4,8 @@ import (
 	"errors"
 	"net/http"
 
+	"Backend/config"
+	"Backend/models"
 	"Backend/repositories"
 	"Backend/services"
 
@@ -26,7 +28,7 @@ func NewStockHandler(db *gorm.DB) (*StockHandler, error) {
 }
 
 // GetStocks obtiene las acciones filtradas por ticker, company y brokerage.
-// Implementa validación de parámetros y manejo de errores mejorado.
+// Si no se proporcionan filtros, muestra todos los datos.
 func (h *StockHandler) GetStocks(c *gin.Context) {
 	if h.db == nil {
 		c.JSON(http.StatusInternalServerError, gin.H{
@@ -48,7 +50,16 @@ func (h *StockHandler) GetStocks(c *gin.Context) {
 		return
 	}
 
-	stocks, err := repositories.GetStocks(h.db, ticker, company, brokerage)
+	var stocks []models.Stock
+	var err error
+
+	// Si no hay filtros, obtener todos los stocks
+	if ticker == "" && company == "" && brokerage == "" {
+		stocks, err = repositories.GetAllStocks(h.db)
+	} else {
+		stocks, err = repositories.GetStocks(h.db, ticker, company, brokerage)
+	}
+
 	if err != nil {
 		if errors.Is(err, gorm.ErrRecordNotFound) {
 			c.JSON(http.StatusNotFound, gin.H{
@@ -70,9 +81,32 @@ func (h *StockHandler) GetStocks(c *gin.Context) {
 		return
 	}
 
-	c.JSON(http.StatusOK, gin.H{
+	// Obtener la fecha más reciente
+	var latestTime string
+	if len(stocks) > 0 {
+		latestTime = stocks[0].Time
+		for _, stock := range stocks {
+			if stock.Time > latestTime {
+				latestTime = stock.Time
+			}
+		}
+	}
+
+	// Preparar la respuesta
+	response := gin.H{
 		"data": stocks,
-	})
+		"metadata": gin.H{
+			"total_records": len(stocks),
+			"last_update":   latestTime,
+			"filters_applied": gin.H{
+				"ticker":    ticker != "",
+				"company":   company != "",
+				"brokerage": brokerage != "",
+			},
+		},
+	}
+
+	c.JSON(http.StatusOK, response)
 }
 
 // GetBestStocks obtiene las mejores recomendaciones de acciones.
@@ -118,5 +152,28 @@ func (h *StockHandler) GetBestStocks(c *gin.Context) {
 
 	c.JSON(http.StatusOK, gin.H{
 		"data": recommendations,
+	})
+}
+
+// UpdateStocks actualiza los datos de stocks desde la API
+func (h *StockHandler) UpdateStocks(c *gin.Context) {
+	if h.db == nil {
+		c.JSON(http.StatusInternalServerError, gin.H{
+			"error": "conexión a base de datos no inicializada",
+		})
+		return
+	}
+
+	// Ejecutar la actualización en una goroutine para no bloquear la respuesta
+	go func() {
+		if err := repositories.FetchAndStoreStockData(); err != nil {
+			config.LogError(err, "Error actualizando datos de stocks")
+		} else {
+			config.LogInfo("✅ Datos de stocks actualizados exitosamente", "UpdateStocks")
+		}
+	}()
+
+	c.JSON(http.StatusAccepted, gin.H{
+		"message": "Actualización de datos iniciada",
 	})
 }
