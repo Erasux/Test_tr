@@ -32,11 +32,11 @@ func FetchAndStoreStockData() error {
 
 	for {
 		pageCount++
-		fmt.Printf("📄 Obteniendo página %d de %d...\n", pageCount, maxPages)
+		fmt.Printf(" Obteniendo página %d de %d...\n", pageCount, maxPages)
 
 		// Verificar si hemos alcanzado el límite de páginas
-		if pageCount > maxPages {
-			fmt.Printf("⚠️ Límite de %d páginas alcanzado\n", maxPages)
+		if pageCount >= maxPages {
+			fmt.Printf("Límite de %d páginas alcanzado\n", maxPages)
 			break
 		}
 
@@ -78,7 +78,7 @@ func FetchAndStoreStockData() error {
 		// Verificar si hay más páginas
 		nextPage = stockData.NextPage
 		if nextPage == "" {
-			fmt.Printf("🏁 No hay más páginas para procesar\n")
+			fmt.Printf("Ultima Pagina\n")
 			break
 		}
 
@@ -87,7 +87,6 @@ func FetchAndStoreStockData() error {
 	}
 
 	fmt.Printf("✅ Proceso completado:\n")
-	fmt.Printf("   - Total de páginas procesadas: %d\n", pageCount)
 	fmt.Printf("   - Total de stocks procesados: %d\n", totalStocks)
 	return nil
 }
