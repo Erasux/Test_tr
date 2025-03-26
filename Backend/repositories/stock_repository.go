@@ -48,8 +48,8 @@ func FetchAndStoreStockData() error {
 
 	// Realizar un UPSERT usando GORM
 	result := db.Clauses(clause.OnConflict{
-		Columns:   []clause.Column{{Name: "ticker"}, {Name: "time"}},                                                                 // Conflict keys
-		DoUpdates: clause.AssignmentColumns([]string{"target_from", "target_to", "action", "brokerage", "rating_from", "rating_to"}), // Campos a actualizar
+		Columns:   []clause.Column{{Name: "ticker"}, {Name: "time"}},
+		DoUpdates: clause.AssignmentColumns([]string{"target_from", "target_to", "action", "brokerage", "rating_from", "rating_to"}),
 	}).Create(&stocks)
 
 	if result.Error != nil {
