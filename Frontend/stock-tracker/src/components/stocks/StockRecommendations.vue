@@ -1,5 +1,6 @@
 <template>
   <div class="overflow-x-auto bg-white shadow-md rounded-lg p-4">
+    <RecommendationExplanation />
     <StockFilters @filter-changed="applyFilters" />
     <Loader v-if="loading" />
     <ErrorMessage v-if="errorMessage" :message="errorMessage" />
@@ -60,6 +61,7 @@ import ErrorMessage from "@/components/common/ErrorMessage.vue";
 import EmptyState from "@/components/common/EmptyState.vue";
 import TablePagination from "@/components/common/TablePagination.vue";
 import StockFilters from "@/components/stocks/StockFilters.vue";
+import RecommendationExplanation from "@/components/stocks/RecommendationExplanation.vue";
 import type { StockFilters as Filters } from "@/types/stock";
 
 interface TableHeader {
