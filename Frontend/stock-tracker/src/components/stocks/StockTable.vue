@@ -81,7 +81,7 @@ const selectedStock = ref<Stock | null>(null)
 
 // Estado para paginación
 const currentPage = ref(1)
-const itemsPerPage = ref(10)
+const itemsPerPage = ref(15)
 
 // Ordenamiento de stocks
 const sortedStocks = computed(() => {

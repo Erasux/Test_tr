@@ -71,7 +71,7 @@ interface Props {
 const props = withDefaults(defineProps<Props>(), {
   currentPage: 1,
   totalItems: 0,
-  itemsPerPage: 10
+  itemsPerPage: 15
 })
 
 const emit = defineEmits<{
@@ -83,34 +83,22 @@ const startItem = computed(() => ((props.currentPage - 1) * props.itemsPerPage) 
 const endItem = computed(() => Math.min(props.currentPage * props.itemsPerPage, props.totalItems))
 
 const visiblePages = computed<(number | string)[]>(() => {
-  const delta = 2
-  const range: number[] = []
-  const rangeWithDots: (number | string)[] = []
-  let l: number | undefined
+  const pages: (number | string)[] = []
 
-  for (let i = 1; i <= Math.min(totalPages.value, 7); i++) {
-    range.push(i)
-  }
-
-  if (totalPages.value <= 7) {
-    return range
-  }
-
-  for (const i of range) {
-    if (i === 1 || i === totalPages.value || i >= props.currentPage - delta && i <= props.currentPage + delta) {
-      if (l) {
-        if (i - l === 2) {
-          rangeWithDots.push(l + 1)
-        } else if (i - l !== 1) {
-          rangeWithDots.push('...')
-        }
-      }
-      rangeWithDots.push(i)
-      l = i
+  if (totalPages.value <= 3) {
+    // Si hay 3 o menos páginas, mostrar todas
+    for (let i = 1; i <= totalPages.value; i++) {
+      pages.push(i)
     }
+    return pages
   }
 
-  return rangeWithDots
+  // Mostrar páginas alrededor de la página actual
+  for (let i = Math.max(1, props.currentPage - 1); i <= Math.min(totalPages.value, props.currentPage + 1); i++) {
+    pages.push(i)
+  }
+
+  return pages
 })
 
 function prevPage() {
